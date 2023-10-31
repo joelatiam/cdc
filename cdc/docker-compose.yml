@@ -1,0 +1,62 @@
+version: "3.7"
+services:
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.9
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: docker.io/bitnami/kafka:3.6
+    ports:
+      - "9093:9093"
+      - "9092:9092"
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+
+  debezium:
+    image: debezium/connect:2.4
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: my_connect_statuses
+    depends_on: [kafka]
+    ports:
+      - 8083:8083
+    volumes:
+      - ./debezium_config:/config
+      - ./debezium_offsets:/offsets
+  
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:9092"
+      JVM_OPTS: "-Xms32M -Xmx64M"
+      SERVER_SERVLET_CONTEXTPATH: "/"
+    ports:
+      - 9090:9000
+    depends_on:
+      - kafka
+
+volumes:
+  # postgres_data:    # Named volume for postgres data
+  zookeeper_data:   # Named volume for ZooKeeper data
+  zookeeper_logs:   # Named volume for ZooKeeper logs
+  kafka_data:       # Named volume for Kafka data
+  debezium_config:  # Volume for Debezium connector configurations
+  debezium_offsets:  # Volume for Debezium connector offset data
+ 
