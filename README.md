@@ -9,14 +9,15 @@
 
 -  [How to Start](#how-to-start)
 	1. [Project Setup](#project-setup)
-	2.  [OLTP Database: Postgres](#oltp-database-postgres)
-	3.  [CDC: Debezium/Kafka](#cdc-with-debezium-and-kafka)
-	4.  [OLAP Database: Clickhouse](#olap-database-clickhouse)
+	2. [OLTP Database: Postgres](#oltp-database-postgres)
+	3. [CDC: Debezium/Kafka](#cdc-with-debezium-and-kafka)
+	4. [OLAP Database: Clickhouse](#olap-database-clickhouse)
+	5. [Data Visualization: Superset](#data-visualization-superset)
 
 
 ## Introduction
 
-Rembo CDC is a data integration project that leverages Debezium, Kafka, and ClickHouse to stream data changes from a PostgreSQL database to a ClickHouse data warehouse. This project provides a streamlined approach for real-time data replication, enabling businesses to analyze and report on their PostgreSQL data in a highly efficient manner.
+Data integration project that leverages Debezium, Kafka, and ClickHouse to stream data changes from a PostgreSQL database to a ClickHouse data warehouse. This project provides a streamlined approach for real-time data replication, enabling businesses to analyze and report on their PostgreSQL data in a highly efficient manner.
 
 
 ## How to Start
@@ -117,3 +118,8 @@ We will use **Debezium** to capture changes from our **Postgres**  and publish t
 		```
 
 ### OLAP Database: Clickhouse
+(Pending Documentation)
+
+
+### Data Visualization: Superset
+(Not yet implemented)
