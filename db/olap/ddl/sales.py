@@ -95,10 +95,36 @@ SELECT
 FROM sales_queue;
 """
 
+CREATE_VIEW_SALES = """
+CREATE VIEW view_sales_last_rec AS
+SELECT * FROM 
+(
+WITH LatestSales AS (
+    SELECT
+        s1.sales_id,
+        MAX(record_version) AS max_record_version
+    FROM sales s1
+    WHERE s1.is_deleted = 0
+    GROUP BY s1.sales_id
+)
+SELECT
+    s.sales_id,
+    s.currencykey, s.customer_id, s.discount_amount, s.duedate, s.duedatekey,
+    s.extended_amount, s.freight, s.order_date, s.order_quantity, s.product_standard_cost,
+    s.revision_number, s.sales_amount, s.sales_order_line_number, s.sales_order_number,
+    s.sales_territory_id, s.shipdate, s.tax_amt, s.total_product_cost, s.unit_price,
+    s.unit_price_discount_pct, s.employee_id, s.created_at, s.record_version,
+    s.arrival_date_time_tz, s.source_updated_at_ms, s.is_deleted
+FROM sales s
+INNER JOIN LatestSales ls ON s.sales_id = ls.sales_id AND s.record_version = ls.max_record_version
+WHERE s.is_deleted = 0
+) sales;
+"""
+
+
+DROP_VIEW_SALES = 'DROP VIEW IF EXISTS view_sales_last_rec;'
 DROP_SALE = 'DROP TABLE IF EXISTS sales;'
 DROP_SALE_MV = 'DROP TABLE IF EXISTS sales_mv;'
 DROP_SALE_QUEUE = 'DROP TABLE IF EXISTS sales_queue;'
 
-
-SALES_QUERIES = [DROP_SALE, DROP_SALE_MV, DROP_SALE_QUEUE, CREATE_SALES_TABLE, CREATE_SALES_QUEUE_TABLE, CREATE_SALES_ORDERS_MV]
-
+SALES_QUERIES = [DROP_VIEW_SALES, DROP_SALE, DROP_SALE_MV, DROP_SALE_QUEUE, CREATE_SALES_TABLE, CREATE_SALES_QUEUE_TABLE, CREATE_SALES_ORDERS_MV, CREATE_VIEW_SALES]

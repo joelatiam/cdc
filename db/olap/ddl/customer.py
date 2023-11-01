@@ -95,10 +95,33 @@ SELECT
     now() AS arrival_date_time_tz
 FROM customer_queue;
 """
+CREATE_VIEW_CUSTOMER = """
+CREATE VIEW view_customer_last_rec AS
+WITH LatestCustomer AS (
+    SELECT
+        c1.customer_id,
+        MAX(record_version) AS max_record_version
+    FROM customer c1
+    WHERE c1.is_deleted = 0
+    GROUP BY c1.customer_id
+)
+SELECT
+    c.customer_id,
+    c.last_name, c.address_line1, c.address_line2, c.birth_date, c.commute_distance,
+    c.customer_alternate_key, c.date_first_purchase, c.email_address, c.education, c.occupation,
+    c.first_name, c.gender, c.house_owner_flag, c.marital_status, c.middle_name, c.name_style,
+    c.number_cars_owned, c.number_children_at_home, c.phone, c.suffix, c.title,
+    c.total_children, c.yearly_income, c.created_at, c.record_version, c.arrival_date_time_tz,
+    c.source_updated_at_ms, c.db_action, c.is_deleted
+FROM customer c
+INNER JOIN LatestCustomer lc ON c.customer_id = lc.customer_id AND c.record_version = lc.max_record_version
+WHERE c.is_deleted = 0;
+"""
 
+DROP_VIEW_SALES_CUSTOMER = 'DROP VIEW IF EXISTS view_customer_last_rec;'
 DROP_CUSTOMER = 'DROP TABLE IF EXISTS customer;'
 DROP_CUSTOMER_MV = 'DROP TABLE IF EXISTS customer_mv;'
 DROP_CUSTOMER_QUEUE = 'DROP TABLE IF EXISTS customer_queue;'
 
 
-CUSTOMER_QUERIES = [DROP_CUSTOMER, DROP_CUSTOMER_MV, DROP_CUSTOMER_QUEUE, CREATE_CUSTOMER_TABLE, CREATE_CUSTOMER_QUEUE_TABLE, CREATE_CUSTOMER_MV]
+CUSTOMER_QUERIES = [DROP_VIEW_SALES_CUSTOMER, DROP_CUSTOMER, DROP_CUSTOMER_MV, DROP_CUSTOMER_QUEUE, CREATE_CUSTOMER_TABLE, CREATE_CUSTOMER_QUEUE_TABLE, CREATE_CUSTOMER_MV, CREATE_VIEW_CUSTOMER]

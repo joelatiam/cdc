@@ -56,8 +56,29 @@ SELECT
 FROM sales_territory_queue;
 """
 
+CREATE_VIEW_SALES_TERRITORY = """
+CREATE VIEW view_sales_territory_last_rec AS
+WITH LatestSalesTerritory AS (
+    SELECT
+        s1.sales_territory_id,
+        MAX(record_version) AS max_record_version
+    FROM sales_territory s1
+    WHERE s1.is_deleted = 0
+    GROUP BY s1.sales_territory_id
+)
+SELECT
+    s.sales_territory_id,
+    s.sales_territory_country, s.sales_territory_region, s.sales_territory_city,
+    s.created_at, s.record_version, s.arrival_date_time_tz,
+    s.source_updated_at_ms, s.is_deleted
+FROM sales_territory s
+INNER JOIN LatestSalesTerritory lst ON s.sales_territory_id = lst.sales_territory_id AND s.record_version = lst.max_record_version
+WHERE s.is_deleted = 0;
+"""
+
+DROP_VIEW_SALES_TERRITORY = 'DROP VIEW IF EXISTS view_sales_territory_last_rec;'
 DROP_SALES_TERRITORY = 'DROP TABLE IF EXISTS sales_territory;'
 DROP_SALES_TERRITORY_MV = 'DROP TABLE IF EXISTS sales_territory_mv;'
 DROP_SALES_TERRITORY_QUEUE = 'DROP TABLE IF EXISTS sales_territory_queue;'
 
-SALES_TERRITORY_QUERIES = [DROP_SALES_TERRITORY, DROP_SALES_TERRITORY_MV, DROP_SALES_TERRITORY_QUEUE, CREATE_SALES_TERRITORY_TABLE, CREATE_SALES_TERRITORY_QUEUE_TABLE, CREATE_SALES_TERRITORY_MV]
+SALES_TERRITORY_QUERIES = [DROP_VIEW_SALES_TERRITORY, DROP_SALES_TERRITORY, DROP_SALES_TERRITORY_MV, DROP_SALES_TERRITORY_QUEUE, CREATE_SALES_TERRITORY_TABLE, CREATE_SALES_TERRITORY_QUEUE_TABLE, CREATE_SALES_TERRITORY_MV, CREATE_VIEW_SALES_TERRITORY]

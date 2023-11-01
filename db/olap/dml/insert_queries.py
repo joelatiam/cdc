@@ -110,7 +110,7 @@ FROM postgresql('{PG_HOST}', '{PG_DB}', 'sales', '{PG_USER}', '{PG_PASSWORD}');
 
 
 # Create a list of queries
-INSERT_QUERIES = [INSERT_SALES_TERRITORY_QUERY, INSERT_CUSTOMER_QUERY, INSERT_SALES_QUERY ]
+INSERT_QUERIES = [INSERT_SALES_TERRITORY_QUERY, INSERT_CUSTOMER_QUERY, INSERT_EMPLOYEE_QUERY, INSERT_SALES_QUERY ]
 
 # You can access the queries using the list like this:
 # for query in insert_queries:

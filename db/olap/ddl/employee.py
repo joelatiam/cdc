@@ -54,8 +54,35 @@ SELECT
 FROM employee_queue;
 """
 
+CREATE_VIEW_EMPLOYEE="""
+CREATE VIEW view_employees_last_rec AS
+WITH LatestEmployee AS (
+    SELECT
+        e.employee_id,
+        MAX(record_version) AS max_record_version
+    FROM employee e
+    WHERE e.is_deleted = 0
+    GROUP BY e.employee_id
+)
+SELECT
+    e.employee_id,
+    e.employee_name,
+    e.sales_territory_id,
+    e.created_at,
+    e.arrival_date_time_tz,
+    e.source_updated_at_ms,
+    e.is_deleted,
+    e.record_version
+FROM employee e
+INNER JOIN LatestEmployee le ON e.employee_id = le.employee_id AND e.record_version = le.max_record_version
+WHERE e.is_deleted = 0;
+"""
+
+
+DROP_VIEW_EMPLOYEE = 'DROP VIEW IF EXISTS view_employees_last_rec;'
 DROP_EMPLOYEE = 'DROP TABLE IF EXISTS employee;'
 DROP_EMPLOYEE_MV = 'DROP TABLE IF EXISTS employee_mv;'
 DROP_EMPLOYEE_QUEUE = 'DROP TABLE IF EXISTS employee_queue;'
 
-EMPLOYEE_QUERIES = [DROP_EMPLOYEE, DROP_EMPLOYEE_MV, DROP_EMPLOYEE_QUEUE, CREATE_EMPLOYEE_TABLE, CREATE_EMPLOYEE_QUEUE_TABLE, CREATE_EMPLOYEE_MV]
+
+EMPLOYEE_QUERIES = [DROP_VIEW_EMPLOYEE, DROP_EMPLOYEE, DROP_EMPLOYEE_MV, DROP_EMPLOYEE_QUEUE, CREATE_EMPLOYEE_TABLE, CREATE_EMPLOYEE_QUEUE_TABLE, CREATE_EMPLOYEE_MV, CREATE_VIEW_EMPLOYEE]
