@@ -3,3 +3,5 @@
 .venv/
 **.csv
 **/connectors/*.json
+.vscode
+**/__pycache__/
