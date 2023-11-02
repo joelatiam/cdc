@@ -11,11 +11,14 @@
 -  [How to Start](#how-to-start)
 	1. [Project Setup](#project-setup)
 	2. [OLTP Database: Postgres](#oltp-database-postgres)
-	3. [CDC: Debezium/Kafka](#cdc-with-debezium-and-kafka)
-	4. [OLAP Database: Clickhouse](#olap-database-clickhouse)
-	5. [Data Visualization: Superset](#data-visualization-superset)
+	3. [OLAP Clickhouse Database: Tables Creations and Copy Postgres Records](#olap-clickhouse-database-tables-creations-and-copy-postgres-records)
+	4. [CDC: Debezium/Kafka](#cdc-with-debezium-and-kafka)
+	5. [Databases Sync: Connect Clickhouse Tables to Kafka Topics](#databases-sync-connect-clickhouse-tables-to-kafka-topics)
+	6. [Data Visualization: Superset](#data-visualization-superset)
 	
--  [Data Dictionary: Clickhouse OLAP](#data-dictionary-clickhouse-olap)
+- [Scripts List](#scripts-list)
+- [Data Dictionary: Clickhouse OLAP](#data-dictionary-clickhouse-olap)
+- [OLAP Query Examples](#olap-query-examples)
 
 
 ## Introduction
@@ -44,7 +47,8 @@ The implementation leverages the "[Publish–subscribe pattern](https://en.wikip
             ├── ddm							# Ingest data from Postgres using scripts                                     
         ├── oltp							# Postgres section
             ├── ddl                       	# Tables definition
-            ├── ddm							# Seed the db with random records                                       
+            ├── ddm							# Seed the db with random records
+    ├──  img                                # BI Screenshots
     ├── .gitignore
     ├── README.md
     └── requirements.txt                    #  Python packages to be installed
@@ -111,6 +115,30 @@ For the OLTP component, [database replication should be logical](https://hevodat
 
 These steps will ensure that the PostgreSQL database is ready for logical replication and data capture.
 
+### OLAP Clickhouse Database: Tables Creations and Copy Postgres Records
+
+*Instructions on setting up and configuring the Clickhouse database.* (Update your **olap/.env**  following **olap/.env.example**)
+
+You can use this [approache](https://clickhouse.com/docs/en/install#quick-install) to install and run Clickhouse. Follow these steps to set up the OLAP component:
+  
+ -  Create tables:
+	- To [create/recreate](db/olap/ddl/create_tables.py)  tables, run the following command:
+	
+		```bash
+		python  db/olap/ddl/tables_creations.py
+		```
+		
+	 - [db/olap/ddl/](db/olap/ddl/) directories contains:
+		 - Tables definitaions
+		 - [Kafka Table Engines](https://clickhouse.com/docs/en/integrations/kafka/kafka-table-engine) & Materielized Views
+		 - Views helping to fetch most recent records versions *(This might not be the best approach since Clickhouse provides [rich functionalities](https://clickhouse.com/docs/en/sql-reference/statements/create/table) of organizing records in table in creation)*.
+		
+ -  Ingest records from OTLP (Postgres)
+
+	- Since we are initializing our Postgres DB with many records *(**500k:** customer, sales | **11** sales_territory | **5** employee)*, getting all the records at once through kafka will be challenging in development environment, this script helps copying all the postgres records
+	```bash
+	python  db/olap/dml/import_from_oltp.py
+	```
 
 ### CDC with Debezium and Kafka
 
@@ -131,7 +159,7 @@ We will use **Debezium** to capture changes from our **Postgres**  and publish t
 	curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" localhost:8083/connectors/ -d '{ "name": "inventory-connector", "config": { "connector.class": "io.debezium.connector.mysql.MySqlConnector", "tasks.max": "1", "database.hostname": "mysql", "database.port": "3306", "database.user": "debezium", "database.password": "dbz", "database.server.id": "184054", "topic.prefix": "dbserver1", "database.include.list": "inventory", "schema.history.internal.kafka.bootstrap.servers": "kafka:9092", "schema.history.internal.kafka.topic": "schemahistory.inventory" } }' 
 	```
 	Debezium provides other [endpoints](https://docs.confluent.io/platform/current/connect/references/restapi.html) to helping to manage the connector
- - Update records and watch kafka messages
+ - Test Postgres to Kafka (Update records and watch kafka messages)
 
 	 - Create/Update records from in our tables
 	 - View/Read Kafka messages using **Kafkadrop** http://localhost:9090/
@@ -149,49 +177,19 @@ We will use **Debezium** to capture changes from our **Postgres**  and publish t
 		python cdc/kafka/watch-topics.py 
 		```
 
-
-### OLAP Database: Clickhouse
-
-*Instructions on setting up and configuring the Clickhouse database.* (Update your **olap/.env**  following **olap/.env.example**)
-
-You can use this [approache](https://clickhouse.com/docs/en/install#quick-install) to install and run Clickhouse. Follow these steps to set up the OLAP component:
-  
- -  Create tables:
-	- To [create/recreate](db/olap/ddl/create_tables.py)  tables, run the following command:
 	
-		```bash
-		python  db/olap/ddl/tables_creations.py
-		```
-		
-	 - [db/olap/ddl/](db/olap/ddl/) directories contains:
-		 - Tables definitaions
-		 - [Kafka Table Engines](https://clickhouse.com/docs/en/integrations/kafka/kafka-table-engine) & Materielized Views
-		 - Views helping to fetch most recent records versions *(This might not be the best approach since Clickhouse provides [reach functionalities](https://clickhouse.com/docs/en/sql-reference/statements/create/table) of organizing records in table in creation)*.
-		
- -  Ingest records from OTLP (Postgres)
 
-	- Since we are initializing our Postgres DB with many records *(**500k:** customer, sales | **11** sales_territory | **5** employee)*, getting all the records at once through kafka will be challenging in development environment, this script helps copying records all the postgres records
+> Our Clickhouse DB will be connected to Kafka from the the folling section, so at this phase changes from OLTP DB to OLAP DB won't be reflected yet
 
+### Databases Sync: Connect Clickhouse Tables to Kafka Topics
+
+*Instructions on connecting clickhouse tables to kafka topics.* (Update your **olap/.env**  following **olap/.env.example**)
+
+ -  Connect tables to kafka
 	```bash
-	python  db/olap/dml/import_from_oltp.py
+	python  db/olap/ddl/create_kafka_connect.py  
 	```
-
 From here, any Create, Update, Delete operation from postgres will be reflected to our clickhouse db.
-
-*Query Example: **Employees sales performance***
-
-    SELECT
-    sales.employee_id, emp.employee_name,
-    terr.sales_territory_id, terr.sales_territory_country, terr.sales_territory_region,
-    SUM(sales.sales_amount) AS sales_total_amount, count() AS sales_count
-    FROM view_sales_last_rec sales
-    LEFT JOIN view_employees_last_rec emp ON sales.employee_id = emp.employee_id
-    LEFT JOIN view_sales_territory_last_rec terr ON sales.sales_territory_id = terr.sales_territory_id
-    GROUP BY
-    sales.employee_id, emp.employee_name,
-    terr.sales_territory_id, terr.sales_territory_country, terr.sales_territory_region
-    ORDER BY sales_total_amount DESC, sales_count DESC;
-  
 
 ### Data Visualization: Superset
 
@@ -204,12 +202,48 @@ If you decide to run Superset in production mode, the installation page we've sh
 
  - **Clickhouse Plugin**
 	 Follow instruction founds [here](https://superset.apache.org/docs/databases/clickhouse/) to add clickhouse integration.
+	 
+ - **Datasets**
+	 After establishing a connection to the ClickHouse database, you can  integrate the pre-defined **table views** as datasets, or even incorporate custom SQL queries as virtual tables. We've created four virtual tables, which serve as datasets *(refer to queries in the [OLAP Query Examples](#olap-query-examples) section)* to simplify the process of generating charts and visualizations.
+	 
+- **Dashboards** 
+	We've used the queries from the [OLAP Query Examples](#olap-query-examples) section to generate the charts shown in the screenshots. You can adjust the dashboard's auto-refresh interval to instantly reflect any record changes.
+	
+<img  src="img/Screen Shot 2023-11-04 at 03.49.43-min.png"  alt="Screenshot"  width="800"  height="400">
+
+<img  src="img/Screen Shot 2023-11-04 at 03.50.58-min.png"  alt="Screenshot"  width="800"  height="400">
+
+
+
+## Scripts List
+
+| Script Name                                          | Description                                                       |
+|-----------------------------------------------------|-------------------------------------------------------------------|
+| `db/oltp/ddl/tables_creations.py` (OLTP Postgres)   | Python script to create or recreate the necessary tables in the OLTP Postgres database. |
+| `db/oltp/ddl/alter_tables.py` (OLTP Postgres)      | Python script to alter tables with Replica Identity in the OLTP Postgres database. |
+| `db/oltp/dml/create_random_records.py` (OLTP Postgres) | Python script to generate random records for customer, sales, sales territory, and employee tables in the OLTP Postgres database. |
+| `db/olap/ddl/tables_creations.py` (OLAP Clickhouse) | Python script to create or recreate tables and views in the OLAP Clickhouse database. |
+| `db/olap/dml/import_from_oltp.py` (OLAP Clickhouse) | Python script to copy records from the OLTP Postgres database to the OLAP Clickhouse database. |
+| `db/olap/ddl/create_kafka_connect.py` (OLAP Clickhouse) | Python script to connect Clickhouse tables to Kafka topics for change data capture. |
+| `cdc/kafka/watch-topics.py` (CDC with Debezium and Kafka) | Python script to watch Kafka topics for messages related to changes in the Postgres database. |
+
+
+### Notes
+
+- These scripts are used in different phases of the data integration process, from setting up the OLTP and OLAP databases to managing change data capture (CDC) with Debezium and Kafka.
+- Ensure that you run these scripts from the project's root directory and have the required environment variables and configurations set up.
+- Be cautious when running these scripts, especially in a production environment, as they may modify database records or structures.
+
+Please refer to the script descriptions for more information on their usage and purpose.
+
+
+
 
 ## Data Dictionary: Clickhouse OLAP
 
 ### Notes
 
-> The combination of  `(table_name)_id`  and `record_version` column serves as the primary key for each table, ensuring the uniqueness of each record per . Some columns are marked as "Nullable," indicating they can contain null values, representing missing or unknown information. 
+> The combination of  `(table_name)_id`  and `record_version` column serves as the primary key for each table, ensuring the uniqueness of each record per create/update/delete, so fetching a record id + the highest `record_version`, returns the most recent version/state of the record. Some columns are marked as "Nullable," indicating they can contain null values, representing missing or unknown information. 
 > The `arrival_date_time_tz` column is set to the default value of the current timestamp when a new record is inserted into the warehouse. 
 > The `source_updated_at_ms` represents the `ts_ms` (timestamp in millisecond) from the Postgres WAL or [from  Debezium](https://debezium.io/documentation/reference/stable/connectors/postgresql.html) capture if the source DB didn't provide
 > The `db_action` column can be used to track the type of operation that was performed
@@ -315,3 +349,106 @@ If you decide to run Superset in production mode, the installation page we've sh
 | source_updated_at_ms       | Nullable Int64      | Timestamp in milliseconds of the source data's last update.      |
 | db_action                  | Nullable String     | Description of the database operation (e.g., 'insert', 'update'). |
 | is_deleted                 | Nullable UInt8      | Flag indicating record deletion (1 for deleted, 0 for not deleted).|
+
+
+## OLAP Query Examples
+
+ - **Company Sales**
+ 
+	 This SQL query retrieves and consolidates sales data, connecting it with **customer** and **employee** details to provide comprehensive insights into the **sales** transactions. It utilizes **views** to access the latest records and join relevant information, making it suitable for generating detailed sales reports.
+```
+SELECT
+s.sales_id sales_id, s.sales_amount sales_amount, s.order_date order_date,
+s.customer_id customer_id,
+c.first_name AS customer_first_name,
+c.last_name AS customer_last_name,
+c.email_address AS customer_email_address,
+c.education AS customer_education,
+c.gender AS customer_gender,
+c.phone AS customer_phone,
+st.sales_territory_country sales_territory_country, st.sales_territory_city sales_territory_city,
+emp.employee_id employee_id, emp.employee_name employee_name
+FROM view_sales_last_rec s
+LEFT JOIN view_customer_last_rec c ON s.customer_id = c.customer_id
+LEFT JOIN view_employees_last_rec emp ON s.employee_id = emp.employee_id
+LEFT JOIN view_sales_territory_last_rec st ON s.sales_territory_id = st.sales_territory_id;
+```
+
+- **Sales Per Customer Per Location**
+	This SQL query generates a summarized report of **sales** data, including **customer** details like their first name, last name, gender, email address, and **sales territory** information. It aggregates **sales amounts**, counts **sales records**, and calculates the **average sales amount per customer**. The results are grouped by customer and sales territory, providing insights into sales performance.
+```
+SELECT
+`customer_id` AS `customer_id`, `customer_first_name` AS `customer_first_name`,
+`customer_last_name` AS `customer_last_name`, sum(`sales_amount`) AS `SUM(sales_amount)`,
+count() AS `COUNT(sales_id)`, AVG(`sales_amount`) AS `AVG(sales_amount`,
+`sales_territory_city` AS `sales_territory_city`, `sales_territory_country` AS `sales_territory_country`,
+`customer_gender` AS `customer_gender`, `customer_email_address` AS `customer_email_address`
+FROM
+(SELECT s.sales_id sales_id, s.sales_amount sales_amount, s.order_date order_date,
+ s.customer_id customer_id, c.first_name AS customer_first_name,
+ c.last_name AS customer_last_name, c.email_address AS customer_email_address,
+ c.education AS customer_education, c.gender AS customer_gender,
+ c.phone AS customer_phone, st.sales_territory_country sales_territory_country,
+ st.sales_territory_city sales_territory_city, emp.employee_id employee_id,
+ emp.employee_name employee_name
+ FROM view_sales_last_rec s
+ LEFT JOIN view_customer_last_rec c ON s.customer_id = c.customer_id
+ LEFT JOIN view_employees_last_rec emp ON s.employee_id = emp.employee_id
+ LEFT JOIN view_sales_territory_last_rec st ON s.sales_territory_id = st.sales_territory_id
+) AS `virtual_table`
+GROUP BY `customer_id`, `customer_first_name`, `customer_last_name`, `customer_gender`,
+`customer_email_address`, `sales_territory_country`, `sales_territory_city`
+ORDER BY `sales_territory_country`, `sales_territory_city`, `SUM(sales_amount)`, COUNT() DESC
+LIMIT 1000;
+```
+
+- **Employees Sales Per City**
+	This query combines **sales statistics** for **employees** in different sales territories. It calculates the sum of **sales amounts** and sales count for each employee in their respective territory, displaying sales territory details and employee information. If there are no sales for a specific territory or employee, it includes zero values for sales amount and count.
+```
+WITH employee_sales AS
+(
+SELECT
+emp.employee_id AS employee_id,SUM(s.sales_amount) sales_amount,
+COALESCE(COUNT(s.sales_id), 0) sales_count,s.sales_territory_id AS sales_territory_id
+FROM view_employees_last_rec emp
+INNER JOIN view_sales_last_rec s ON emp.employee_id = s.employee_id
+GROUP BY (emp.employee_id, s.sales_territory_id)
+),
+st_with_emp AS (
+SELECT st.sales_territory_id,st.sales_territory_country, st.sales_territory_city,
+emp.employee_id, emp.employee_name
+FROM view_sales_territory_last_rec st
+FULL OUTER JOIN view_employees_last_rec emp ON true ORDER BY st.sales_territory_id
+)
+SELECT
+st.sales_territory_id, st.sales_territory_country, st.sales_territory_city,
+st.employee_id, st.employee_name,COALESCE(emp_s.sales_amount, 0)sales_amount,
+COALESCE(emp_s.sales_count, 0) sales_count
+FROM st_with_emp st
+LEFT JOIN employee_sales emp_s ON st.sales_territory_id = emp_s.sales_territory_id
+AND  st.employee_id = emp_s.employee_id;
+```
+
+- **Current Employees**
+	This SQL query retrieves the most recent employee and sales territory details, filtering out deleted records to ensure data accuracy.
+
+```	
+WITH emp AS (
+SELECT 
+DISTINCT ON (e.employee_id) e.employee_id, e.employee_name, e.sales_territory_id, e.created_at, 
+e.arrival_date_time_tz, e.source_updated_at_ms, e.is_deleted, e.record_version
+FROM employee e
+ORDER BY e.employee_id, e.record_version DESC
+),
+st AS (
+SELECT
+DISTINCT ON (st.sales_territory_id) st.sales_territory_id, st.sales_territory_country,
+st.sales_territory_region, st.sales_territory_city, st.record_version, st.is_deleted 
+FROM sales_territory st 
+ORDER BY st.sales_territory_id, st.record_version DESC
+)
+SELECT emp.*, st.sales_territory_country, st.sales_territory_region, st.sales_territory_city
+FROM emp
+INNER JOIN st ON emp.sales_territory_id = st.sales_territory_id
+WHERE emp.is_deleted = 0 AND st.is_deleted = 0
+```

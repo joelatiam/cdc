@@ -46,57 +46,68 @@ sales_territories = [
     {
         "Sales_Territory_Country": "South Africa",
         "Sales_Territory_Region": "Western Cape",
-        "Sales_Territory_City": "Cape Town"
+        "Sales_Territory_City": "Cape Town",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     },
     {
         "Sales_Territory_Country": "South Africa",
         "Sales_Territory_Region": "Gauteng",
-        "Sales_Territory_City": "Johannesburg"
+        "Sales_Territory_City": "Johannesburg",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     },
     {
         "Sales_Territory_Country": "Nigeria",
         "Sales_Territory_Region": "Lagos",
-        "Sales_Territory_City": "Lagos"
+        "Sales_Territory_City": "Lagos",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     },
     {
         "Sales_Territory_Country": "Egypt",
         "Sales_Territory_Region": "Cairo",
-        "Sales_Territory_City": "Cairo"
+        "Sales_Territory_City": "Cairo",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y")
     },
     {
         "Sales_Territory_Country": "Kenya",
         "Sales_Territory_Region": "Nairobi",
-        "Sales_Territory_City": "Nairobi"
+        "Sales_Territory_City": "Nairobi",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     },
     {
         "Sales_Territory_Country": "Morocco",
         "Sales_Territory_Region": "Casablanca",
-        "Sales_Territory_City": "Casablanca"
+        "Sales_Territory_City": "Casablanca",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     },
     {
         "Sales_Territory_Country": "Ghana",
         "Sales_Territory_Region": "Greater Accra",
-        "Sales_Territory_City": "Accra"
+        "Sales_Territory_City": "Accra",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     },
     {
         "Sales_Territory_Country": "Ethiopia",
         "Sales_Territory_Region": "Addis Ababa",
-        "Sales_Territory_City": "Addis Ababa"
+        "Sales_Territory_City": "Addis Ababa",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     },
     {
         "Sales_Territory_Country": "Algeria",
         "Sales_Territory_Region": "Algiers",
-        "Sales_Territory_City": "Algiers"
+        "Sales_Territory_City": "Algiers",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     },
     {
         "Sales_Territory_Country": "Tanzania",
         "Sales_Territory_Region": "Dar es Salaam",
-        "Sales_Territory_City": "Dar es Salaam"
+        "Sales_Territory_City": "Dar es Salaam",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     },
     {
         "Sales_Territory_Country": "Rwanda",
         "Sales_Territory_Region": "Kigali City",
-        "Sales_Territory_City": "Kigali"
+        "Sales_Territory_City": "Kigali",
+        "Created_At": fake.date_between(start_date="-100y", end_date="-30y"),
     }
 ]
 
@@ -110,23 +121,28 @@ print("Inserted 11 records into the Sales Territory table.")
 employee_data = [
     {
         "Employee_Name": "John Doe",
-        "Sales_Territory_Id": 1,
+        "Sales_Territory_Id": fake.random_int(min=1, max=11),
+        "Created_At": fake.date_between(start_date="-20y", end_date="-10y"),
     },
     {
         "Employee_Name": "Jane Smith",
-        "Sales_Territory_Id": 2,
+        "Sales_Territory_Id": fake.random_int(min=1, max=11),
+        "Created_At": fake.date_between(start_date="-20y", end_date="-10y"),
     },
     {
         "Employee_Name": "Bob Johnson",
-        "Sales_Territory_Id": 1,
+        "Sales_Territory_Id": fake.random_int(min=1, max=11),
+        "Created_At": fake.date_between(start_date="-20y", end_date="-10y"),
     },
     {
         "Employee_Name": "Mary Brown",
-        "Sales_Territory_Id": 3,
+        "Sales_Territory_Id": fake.random_int(min=1, max=11),
+        "Created_At": fake.date_between(start_date="-20y", end_date="-10y"),
     },
     {
         "Employee_Name": "Mike Wilson",
-        "Sales_Territory_Id": 2,
+        "Sales_Territory_Id": fake.random_int(min=1, max=11),
+        "Created_At": fake.date_between(start_date="-20y", end_date="-10y"),
     },
 ]
 
@@ -159,6 +175,7 @@ CUSTOMER_COLUMS = [
     "Title",
     "Total_Children",
     "Yearly_Income",
+    "Created_At",
 ]
 
 customer_df = pd.DataFrame(columns=CUSTOMER_COLUMS)
@@ -185,11 +202,13 @@ SALES_COLUMNS = [
     "Unit_Price",
     "Unit_Price_Discount_Pct",
     "Employee_Id",
+    "Created_At"
 ]
 sales_df = pd.DataFrame(columns=SALES_COLUMNS)
 
 
 for i in range(2500):
+    customer_created_at = fake.date_between(start_date="-10y", end_date="today")
     customer_dict = {
         "Last_Name": fake.last_name(),
         "Address_Line1": fake.street_address(),
@@ -197,7 +216,7 @@ for i in range(2500):
         "Birth_Date": fake.date_of_birth(minimum_age=18, maximum_age=80).strftime("%Y-%m-%d"),
         "Commute_Distance": fake.random_int(min=0, max=100),
         "Customer_Alternate_Key": fake.swift11(),
-        "Date_First_Purchase": fake.date_between(start_date="-30d", end_date="today").strftime("%Y-%m-%d"),
+        "Date_First_Purchase": fake.date_between(start_date=customer_created_at, end_date="today").strftime("%Y-%m-%d"),
         "Email_Address": fake.email(),
         "Education": fake.random_element(["Bachelor", "Master", "Phd", "Primary", "College"]),
         "Occupation": fake.random_element(["Footballer", "Military", "Public Servant", "Lawyer", "Trader"]),
@@ -221,6 +240,7 @@ for i in range(2500):
         ]),
         "Total_Children": fake.random_int(min=0, max=5),
         "Yearly_Income": fake.random_int(min=20000, max=1000000),
+        "Created_At": customer_created_at,
     }
 
     customer_df = customer_df._append(customer_dict, ignore_index=True)
@@ -233,6 +253,7 @@ for i in range(2500):
     sales_territory_key = random.randint(1, 10)
     customer_id = random.randint(1, 2500)
 
+    sales_created_at = fake.date_between(start_date="-10y", end_date="today").strftime("%Y-%m-%d")
     sales_dict = {
         "CurrencyKey": fake.currency(),
         "Customer_id": customer_id,
@@ -241,7 +262,7 @@ for i in range(2500):
         "DueDateKey": fake.date_between(start_date="-30d", end_date="today").strftime("%Y-%m-%d"),
         "Extended_Amount": fake.random_int(min=0, max=1000),
         "Freight": fake.random_int(min=0, max=500),
-        "Order_Date": fake.date_between(start_date="-30d", end_date="today").strftime("%Y-%m-%d"),
+        "Order_Date": sales_created_at,
         "Order_Quantity": fake.random_int(min=1, max=100),
         "Product_Standard_Cost": fake.random_int(min=10, max=100),
         "Revision_Number": fake.random_int(min=10, max=100),
@@ -255,6 +276,7 @@ for i in range(2500):
         "Unit_Price": fake.random_int(min=5000, max=100000),
         "Unit_Price_Discount_Pct": fake.random_int(min=1, max=2500),
         "Employee_Id": employee_id,
+        "Created_At": sales_created_at,
     }
     sales_df = sales_df._append(sales_dict, ignore_index=True)
 
