@@ -1,6 +1,6 @@
 **/.env
 .DS_Store
-.venv/
+.pyenv/
 **.csv
 **/connectors/*.json
 .vscode

@@ -219,10 +219,10 @@ If you decide to run Superset in production mode, the installation page we've sh
 
 | Script Name                                          | Description                                                       |
 |-----------------------------------------------------|-------------------------------------------------------------------|
-| `db/oltp/ddl/tables_creations.py` (OLTP Postgres)   | Python script to create or recreate the necessary tables in the OLTP Postgres database. |
+| `db/oltp/ddl/create_tables.py` (OLTP Postgres)   | Python script to create or recreate the necessary tables in the OLTP Postgres database. |
 | `db/oltp/ddl/alter_tables.py` (OLTP Postgres)      | Python script to alter tables with Replica Identity in the OLTP Postgres database. |
 | `db/oltp/dml/create_random_records.py` (OLTP Postgres) | Python script to generate random records for customer, sales, sales territory, and employee tables in the OLTP Postgres database. |
-| `db/olap/ddl/tables_creations.py` (OLAP Clickhouse) | Python script to create or recreate tables and views in the OLAP Clickhouse database. |
+| `db/olap/ddl/create_tables.py` (OLAP Clickhouse) | Python script to create or recreate tables and views in the OLAP Clickhouse database. |
 | `db/olap/dml/import_from_oltp.py` (OLAP Clickhouse) | Python script to copy records from the OLTP Postgres database to the OLAP Clickhouse database. |
 | `db/olap/ddl/create_kafka_connect.py` (OLAP Clickhouse) | Python script to connect Clickhouse tables to Kafka topics for change data capture. |
 | `cdc/kafka/watch-topics.py` (CDC with Debezium and Kafka) | Python script to watch Kafka topics for messages related to changes in the Postgres database. |
@@ -289,7 +289,7 @@ Please refer to the script descriptions for more information on their usage and 
 | last_name                  | Nullable String     | Last name of the customer.                                        |
 | address_line1              | Nullable String     | First line of the customer's address.                             |
 | address_line2              | Nullable String     | Second line of the customer's address.                            |
-| birth_date                 | Nullable String     | Date of birth of the customer.                                    |
+| birth_date                 | Nullable Date     | Date of birth of the customer.                                    |
 | commute_distance           | Nullable Int32      | Distance of the customer's commute.                               |
 | customer_alternate_key     | Nullable String     | Alternate key for the customer.                                   |
 | date_first_purchase        | Nullable String     | Date of the customer's first purchase.                            |
@@ -325,21 +325,21 @@ Please refer to the script descriptions for more information on their usage and 
 | currencykey                | Nullable String     | Currency key associated with the sale.                             |
 | customer_id                | Nullable Int32      | Customer ID associated with the sale.                              |
 | discount_amount            | Nullable String     | Amount of discount applied to the sale.                            |
-| duedate                    | Nullable Date       | Due date for the sale.                                             |
+| duedate                    | Nullable Datetime       | Due date for the sale.                                             |
 | duedatekey                 | Nullable Int32      | Key representing the due date.                                     |
 | extended_amount            | Nullable Int32      | Extended amount of the sale.                                      |
 | freight                   | Nullable Int32      | Freight cost for the sale.                                        |
-| order_date                 | Nullable Date       | Date of the sale order.                                           |
+| order_date                 | Nullable Datetime       | Date of the sale order.                                           |
 | order_quantity             | Nullable Int32      | Quantity of items in the sale order.                               |
 | product_standard_cost      | Nullable Int32      | Standard cost of the product in the sale.                          |
 | revision_number            | Nullable Int32      | Revision number of the sale.                                      |
-| sales_amount               | Nullable Int32      | Total sales amount.                                               |
+| sales_amount               | Nullable Int64      | Total sales amount.                                               |
 | sales_order_line_number    | Nullable String     | Line number of the sales order.                                   |
 | sales_order_number         | Nullable String     | Sales order number.                                               |
 | sales_territory_id         | Nullable Int32      | Sales territory associated with the sale.                         |
-| shipdate                   | Nullable Int32      | Ship date for the sale.                                           |
+| shipdate                   | Nullable Datetime      | Ship date for the sale.                                           |
 | tax_amt                   | Nullable Int32      | Tax amount for the sale.                                          |
-| total_product_cost         | Nullable Int32      | Total product cost for the sale.                                  |
+| total_product_cost         | Nullable Int64      | Total product cost for the sale.                                  |
 | unit_price                | Nullable Int32      | Unit price of the product in the sale.                            |
 | unit_price_discount_pct    | Nullable Int32      | Discount percentage applied to the unit price.                    |
 | employee_id                | Nullable Int32      | Employee ID associated with the sale.                             |
@@ -398,8 +398,7 @@ FROM
 ) AS `virtual_table`
 GROUP BY `customer_id`, `customer_first_name`, `customer_last_name`, `customer_gender`,
 `customer_email_address`, `sales_territory_country`, `sales_territory_city`
-ORDER BY `sales_territory_country`, `sales_territory_city`, `SUM(sales_amount)`, COUNT() DESC
-LIMIT 1000;
+ORDER BY `sales_territory_country`, `sales_territory_city`, `SUM(sales_amount)`, COUNT() DESC;
 ```
 
 - **Employees Sales Per City**

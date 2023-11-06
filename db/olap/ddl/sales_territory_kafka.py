@@ -23,7 +23,7 @@ SELECT
     JSONExtract(all, 'payload', 'sales_territory_country', 'Nullable(String)') AS sales_territory_country,
     JSONExtract(all, 'payload', 'sales_territory_region', 'Nullable(String)') AS sales_territory_region,
     JSONExtract(all, 'payload', 'sales_territory_city', 'Nullable(String)') AS sales_territory_city,
-    JSONExtract(all, 'payload', 'created_at', 'Nullable(String)') AS created_at,
+    parseDateTime64BestEffort(JSONExtract(all, 'payload', 'created_at', 'Nullable(String)')) AS created_at,
     CASE
         WHEN JSONExtract(all, 'payload', '__op', 'String') = 'c' THEN 'create'
         WHEN JSONExtract(all, 'payload', '__op', 'String') = 'u' THEN 'update'

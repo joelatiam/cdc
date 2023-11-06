@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS employee
     employee_id Int32,
     employee_name Nullable(String),
     sales_territory_id Nullable(Int32),
-    created_at Nullable(String),
+    created_at Nullable(DateTime),
     record_version Nullable(Int64),
     arrival_date_time_tz DateTime DEFAULT now(),
     source_updated_at_ms Nullable(Int64),

@@ -20,7 +20,7 @@ CLICKHOUSE_PASSWORD = os.getenv("CLICKHOUSE_PASSWORD")
 DB_NAME = os.getenv("CLICKHOUSE_DB_NAME")
 
 
-table_queries = SALES_TERRITORY_QUERIES
+table_queries = SALES_TERRITORY_QUERIES + EMPLOYEE_QUERIES + CUSTOMER_QUERIES + SALES_QUERIES
 
 # Create a ClickHouse client
 client = clickhouse_connect.get_client(host=CLICKHOUSE_HOST, user=CLICKHOUSE_USER, password=CLICKHOUSE_PASSWORD, database=DB_NAME)

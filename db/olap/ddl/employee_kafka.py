@@ -20,7 +20,7 @@ SELECT
     JSONExtract(all, 'payload', 'employee_id', 'Int32') AS employee_id,
     JSONExtract(all, 'payload', 'employee_name', 'Nullable(String)') AS employee_name,
     JSONExtract(all, 'payload', 'sales_territory_id', 'Nullable(Int32)') AS sales_territory_id,
-    JSONExtract(all, 'payload', 'created_at', 'Nullable(String)') AS created_at,
+    parseDateTime64BestEffort(JSONExtract(all, 'payload', 'created_at', 'Nullable(String)')) AS created_at,
     CASE
         WHEN JSONExtract(all, 'payload', '__op', 'String') = 'c' THEN 'create'
         WHEN JSONExtract(all, 'payload', '__op', 'String') = 'u' THEN 'update'

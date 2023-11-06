@@ -21,7 +21,7 @@ SELECT
     JSONExtract(all, 'payload', 'last_name', 'Nullable(String)') AS last_name,
     JSONExtract(all, 'payload', 'address_line1', 'Nullable(String)') AS address_line1,
     JSONExtract(all, 'payload', 'address_line2', 'Nullable(String)') AS address_line2,
-    JSONExtract(all, 'payload', 'birth_date', 'Nullable(String)') AS birth_date,
+    JSONExtract(all, 'payload', 'birth_date', 'Nullable(Date)') AS birth_date,
     JSONExtract(all, 'payload', 'commute_distance', 'Nullable(Int32)') AS commute_distance,
     JSONExtract(all, 'payload', 'customer_alternate_key', 'Nullable(String)') AS customer_alternate_key,
     JSONExtract(all, 'payload', 'date_first_purchase', 'Nullable(String)') AS date_first_purchase,
@@ -41,7 +41,7 @@ SELECT
     JSONExtract(all, 'payload', 'title', 'Nullable(String)') AS title,
     JSONExtract(all, 'payload', 'total_children', 'Nullable(String)') AS total_children,
     JSONExtract(all, 'payload', 'yearly_income', 'Nullable(Int32)') AS yearly_income,
-    JSONExtract(all, 'payload', 'created_at', 'Nullable(String)') AS created_at,
+    parseDateTime64BestEffort(JSONExtract(all, 'payload', 'created_at', 'Nullable(String)')) AS created_at,
     CASE
         WHEN JSONExtract(all, 'payload', '__op', 'String') = 'c' THEN 'create'
         WHEN JSONExtract(all, 'payload', '__op', 'String') = 'u' THEN 'update'

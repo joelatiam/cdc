@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS sales_territory
     sales_territory_country Nullable(String),
     sales_territory_region Nullable(String),
     sales_territory_city Nullable(String),
-    created_at Nullable(String),
+    created_at Nullable(DateTime),
     record_version Int64,
     arrival_date_time_tz DateTime DEFAULT now(),
     source_updated_at_ms Nullable(Int64),
