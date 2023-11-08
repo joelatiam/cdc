@@ -5,7 +5,6 @@ import datetime
 import random
 import math
 
-import numpy as np
 import pandas as pd
 from faker import Faker
 import psycopg2
@@ -320,7 +319,7 @@ for i in range(CUSTOMER_AND_SELL_NUM_ROW//customers_and_sales_to_create):
         def compute_amount(x, sales_amount_to_add):
             new_amount = math.ceil((x * sales_amount_to_add) / 2)
             
-            if new_amount > 3000:
+            if new_amount > 1000:
                 return math.ceil((x / sales_amount_to_add) / 2)
             return new_amount
         
