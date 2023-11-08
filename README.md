@@ -376,34 +376,56 @@ LEFT JOIN view_sales_territory_last_rec st ON s.sales_territory_id = st.sales_te
 ```
 
 - **Sales Per Customer Per Location**
-	This SQL query generates a summarized report of **sales** data, including **customer** details like their first name, last name, gender, email address, and **sales territory** information. It aggregates **sales amounts**, counts **sales records**, and calculates the **average sales amount per customer**. The results are grouped by customer and sales territory, providing insights into sales performance.
+	This SQL query generates a summarized report of **sales** data, including **customer** details like their first name, last name, gender, email address, and **sales territory** information. It aggregates **sales average time(hours) between sales** **sales amounts**, counts **sales records**, and calculates the **average sales amount per customer**. The results are grouped by customer and sales territory, providing insights into sales performance.
 ```
-SELECT
-`customer_id` AS `customer_id`, `customer_first_name` AS `customer_first_name`,
-`customer_last_name` AS `customer_last_name`, sum(`sales_amount`) AS `SUM(sales_amount)`,
-count() AS `COUNT(sales_id)`, AVG(`sales_amount`) AS `AVG(sales_amount`,
-`sales_territory_city` AS `sales_territory_city`, `sales_territory_country` AS `sales_territory_country`,
-`customer_gender` AS `customer_gender`, `customer_email_address` AS `customer_email_address`
+SELECT `customer_id` AS `customer_id`,
+`customer_first_name` AS `customer_first_name`,
+`customer_last_name` AS `customer_last_name`,
+sum(`sales_amount`) AS `SUM(sales_amount)`,
+count() AS `COUNT(sales_id)`,
+ROUND(AVG(`purchase_time_diff_in_hours`), 2) AS `AVG(purchase_time_diff_in_hours)`,
+AVG(`sales_amount`) AS `AVG(sales_amount)`,
+`sales_territory_city` AS `sales_territory_city`,
+`sales_territory_country` AS `sales_territory_country`,
+`customer_gender` AS `customer_gender`,
+`customer_email_address` AS `customer_email_address`
 FROM
-(SELECT s.sales_id sales_id, s.sales_amount sales_amount, s.order_date order_date,
- s.customer_id customer_id, c.first_name AS customer_first_name,
- c.last_name AS customer_last_name, c.email_address AS customer_email_address,
- c.education AS customer_education, c.gender AS customer_gender,
- c.phone AS customer_phone, st.sales_territory_country sales_territory_country,
- st.sales_territory_city sales_territory_city, emp.employee_id employee_id,
- emp.employee_name employee_name
- FROM view_sales_last_rec s
- LEFT JOIN view_customer_last_rec c ON s.customer_id = c.customer_id
- LEFT JOIN view_employees_last_rec emp ON s.employee_id = emp.employee_id
- LEFT JOIN view_sales_territory_last_rec st ON s.sales_territory_id = st.sales_territory_id
-) AS `virtual_table`
-GROUP BY `customer_id`, `customer_first_name`, `customer_last_name`, `customer_gender`,
-`customer_email_address`, `sales_territory_country`, `sales_territory_city`
-ORDER BY `sales_territory_country`, `sales_territory_city`, `SUM(sales_amount)`, COUNT() DESC;
+(SELECT s.sales_id sales_id,
+s.sales_amount sales_amount,
+s.order_date order_date,
+s.customer_id customer_id,
+(sales_with_purchase_time.purchase_time_diff_ms/ 3600000) AS purchase_time_diff_in_hours,
+c.first_name AS customer_first_name,
+c.last_name AS customer_last_name,
+c.email_address AS customer_email_address,
+c.education AS customer_education,
+c.gender AS customer_gender,
+c.phone AS customer_phone,
+st.sales_territory_country sales_territory_country,
+st.sales_territory_city sales_territory_city,
+emp.employee_id employee_id,
+emp.employee_name employee_name
+FROM view_sales_last_rec s
+LEFT JOIN view_sales_last_rec_with_time_between_purchase_in_region sales_with_purchase_time ON s.sales_id = sales_with_purchase_time.sales_id
+LEFT JOIN view_customer_last_rec c ON s.customer_id = c.customer_id
+LEFT JOIN view_employees_last_rec emp ON s.employee_id = emp.employee_id
+LEFT JOIN view_sales_territory_last_rec st ON s.sales_territory_id = st.sales_territory_id) AS `virtual_table`
+GROUP BY `customer_id`,
+`customer_first_name`,
+`customer_last_name`,
+`customer_gender`,
+`customer_email_address`,
+`sales_territory_country`,
+`sales_territory_city`
+ORDER BY sales_territory_country,
+sales_territory_city,
+AVG(`purchase_time_diff_in_hours`) ASC,
+SUM(sales_amount) DESC,
+COUNT() DESC;
 ```
 
 - **Employees Sales Per City**
-	This query combines **sales statistics** for **employees** in different sales territories. It calculates the sum of **sales amounts** and sales count for each employee in their respective territory, displaying sales territory details and employee information. If there are no sales for a specific territory or employee, it includes zero values for sales amount and count.
+	This query combines **sales statistics** for **employees** in different sales territories. It calculates the sum of **sales amounts** and **sales count** for each employee in their respective territory, displaying sales territory details and employee information. If there are no sales for a specific territory or employee, it includes zero values for sales amount and count.
 ```
 WITH employee_sales AS
 (

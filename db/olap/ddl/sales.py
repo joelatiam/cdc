@@ -71,7 +71,36 @@ WHERE s.is_deleted = 0
 """
 
 
+CREATE_VIEW_SALES_WITH_TIME_BETWEEN_PURCHASE = """
+CREATE VIEW view_sales_last_rec_with_time_between_purchase_in_region AS
+SELECT * FROM
+(
+WITH sales_with_previous_sales_dates AS (
+SELECT s.sales_id, previous.order_date previous_order_date
+FROM view_sales_last_rec s
+LEFT JOIN view_sales_last_rec previous
+ON s.customer_id = previous.customer_id
+AND s.sales_territory_id = previous.sales_territory_id
+WHERE previous.order_date < s.order_date
+),
+sales_with_most_previous_sales_dates AS (
+SELECT s.sales_id, max(s.previous_order_date) previous_order_date
+FROM sales_with_previous_sales_dates s
+GROUP BY s.sales_id
+),
+sales_with_time_between_purchase AS (
+SELECT sp.sales_id,
+date_diff('millisecond', sp.previous_order_date, s.order_date) purchase_time_diff_ms
+FROM sales_with_most_previous_sales_dates sp
+INNER JOIN view_sales_last_rec s ON sp.sales_id = s.sales_id
+)
+SELECT * FROM sales_with_time_between_purchase s
+ORDER BY s.sales_id
+)sales;
+"""
+
+DROP_VIEW_SALES_WITH_TIME_BETWEEN_PURCHASE = 'DROP VIEW IF EXISTS view_sales_last_rec_with_time_between_purchase_in_region;'
 DROP_VIEW_SALES = 'DROP VIEW IF EXISTS view_sales_last_rec;'
 DROP_SALE = 'DROP TABLE IF EXISTS sales;'
 
-SALES_QUERIES = [DROP_VIEW_SALES, DROP_SALE, CREATE_SALES_TABLE, CREATE_VIEW_SALES]
+SALES_QUERIES = [DROP_VIEW_SALES_WITH_TIME_BETWEEN_PURCHASE, DROP_VIEW_SALES, DROP_SALE, CREATE_SALES_TABLE, CREATE_VIEW_SALES, CREATE_VIEW_SALES_WITH_TIME_BETWEEN_PURCHASE]
